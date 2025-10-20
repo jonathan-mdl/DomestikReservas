@@ -1,36 +1,67 @@
-// Control/VueloController.cs
-using System;
 using DomestikReservas.Datos;
-using DomestikReservas.Negocio;
+using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace DomestikReservas.Control
 {
     public class VueloController
     {
-        private VueloService vueloService = new VueloService();
-
-        public void MostrarVuelo(Vuelo vuelo)
+        public bool AgregarVuelo(Vuelo v)
         {
-            if (!vueloService.ValidarFecha(vuelo.Fecha))
-            {
-                Console.WriteLine("Fecha inválida.");
-                return;
-            }
+            string query = "INSERT INTO vuelo (numvlo, fecha, hora, destino) VALUES (@numvlo, @fecha, @hora, @destino)";
 
-            if (!vueloService.ValidarHora(vuelo.Hora))
+            using (MySqlConnection conn = new ConexionBD().ObtenerConexion())
+            using (MySqlCommand cmd = new MySqlCommand(query, conn))
             {
-                Console.WriteLine("Hora inválida.");
-                return;
-            }
+                cmd.Parameters.AddWithValue("@numvlo", v.NumVuelo);
+                cmd.Parameters.AddWithValue("@fecha", v.Fecha);
+                cmd.Parameters.AddWithValue("@hora", v.Hora);
+                cmd.Parameters.AddWithValue("@destino", v.Destino);
 
-            if (!vueloService.ValidarDestino(vuelo.Destino))
-            {
-                Console.WriteLine("Destino inválido.");
-                return;
+                try
+                {
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+                catch (MySqlException)
+                {
+                    return false;
+                }
             }
-
-            Console.WriteLine("Vuelo:");
-            Console.WriteLine(vuelo);
         }
+
+        public DataTable ObtenerTodosVuelos()
+        {
+            string query = "SELECT * FROM vuelo";
+
+            using (MySqlConnection conn = new ConexionBD().ObtenerConexion())
+            using (MySqlDataAdapter da = new MySqlDataAdapter(query, conn))
+            {
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                return dt;
+            }
+        }
+
+        public bool ModificarFechaVuelo(string numVlo, DateTime nuevaFecha)
+        {
+            string query = "UPDATE vuelo SET fecha = @nuevaFecha WHERE numvlo = @numVlo";
+
+            using (MySqlConnection conn = new ConexionBD().ObtenerConexion())
+            using (MySqlCommand cmd = new MySqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@nuevaFecha", nuevaFecha);
+                cmd.Parameters.AddWithValue("@numVlo", numVlo);
+
+                try
+                {
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+                catch (MySqlException)
+                {
+                    return false;
+                }
+            }
+        }
+
     }
 }

@@ -1,30 +1,48 @@
-// Control/PasajeroController.cs
-using System;
 using DomestikReservas.Datos;
-using DomestikReservas.Negocio;
+using MySql.Data.MySqlClient;
+using System.Data;
+using System;
 
 namespace DomestikReservas.Control
 {
     public class PasajeroController
     {
-        private PasajeroService pasajeroService = new PasajeroService();
-
-        public void MostrarPasajero(Pasajero pasajero)
+        public bool AgregarPasajero(Pasajero p)
         {
-            if (!pasajeroService.ValidarNombreCompleto(pasajero.Nombre, pasajero.Apellido))
-            {
-                Console.WriteLine("Nombre o apellido inválido.");
-                return;
-            }
+            string query = "INSERT INTO pasajero (rut, nombre, apellido, tipo, puntaje) VALUES (@rut, @nombre, @apellido, @tipo, @puntaje)";
 
-            if (!pasajeroService.ValidarRut(pasajero.Rut))
+            using (MySqlConnection conn = new ConexionBD().ObtenerConexion())
+            using (MySqlCommand cmd = new MySqlCommand(query, conn))
             {
-                Console.WriteLine("RUT inválido.");
-                return;
-            }
+                cmd.Parameters.AddWithValue("@rut", p.Rut);
+                cmd.Parameters.AddWithValue("@nombre", p.Nombre);
+                cmd.Parameters.AddWithValue("@apellido", p.Apellido);
+                cmd.Parameters.AddWithValue("@tipo", p.Tipo);
+                cmd.Parameters.AddWithValue("@puntaje", p.Puntaje);
 
-            Console.WriteLine("Pasajero:");
-            Console.WriteLine(pasajero);
+                try
+                {
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+                catch (MySqlException ex)
+                {
+                    // Aquí puedes mostrar mensaje si quieres
+                    return false;
+                }
+            }
+        }
+
+        public DataTable ObtenerTodosPasajeros()
+        {
+            string query = "SELECT * FROM pasajero";
+
+            using (MySqlConnection conn = new ConexionBD().ObtenerConexion())
+            using (MySqlDataAdapter da = new MySqlDataAdapter(query, conn))
+            {
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                return dt;
+            }
         }
     }
 }
